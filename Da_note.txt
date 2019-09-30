@@ -1,0 +1,167 @@
+====== Design principle ======
+
+* Since sliding windows will expand each data instance into a set of subinstances during Phase 1 Multi-Grained Scanning
+-- we need to group subinstances of the same instance when transforming data
+-- however, to prepare data for TreeServer to train forests, we do not care instance, only subinstance matters
+
+* The major partitioning method among machines is row-partitioning, one worker per row partition file
+-- it can generate subcolumn files for that row; TreeServer loads a column by loading all subcolumn files of that column in order
+
+* MGS can generate very high-dimensional X-vector, needs to group columns in Phase 2 Cascade Forest
+>> to avoid reading/writing many small HDFS files
+
+* In Phase 2, the forest output columns are small, treated as one group ?
+
+* TreeServer
+-- needs to cope with column groups
+-- needs to load subcolumn files of each column
+-- needs to allow X to expand columns stored in another folder (or more)
+-- needs to report prob-vec
+
+====== Operation 1: Put ======
+To put a file from local disk to HDFS as a folder of row partitions
+Input: [local_file_path]  [output_hdfs_folder]  [num_rows]  [num_workers]
+Output: a set of files under [hdfs_folder]:
+- rows_1
+- rows_2
+- ...
+
+====== Operation 2: Slide ======
+To prepare sliding window row data (for later using the tree trained) and column data (for training only, can be disabled during testing)
+Input:  [op1put_hdfs_folder]  [output_hdfs_folder]  [y_index]  [image_width]  [image_height]  [win_side_length_list]  [num_threads]  [output_cols?]  [col_factor]
+-- [win_side_length_list] should be commma-separated, like 3,5,7
+-- [col_factor] means we group columns of X into "[col_factor] * _num_worker" groups
+Output: for each win_side_length, create a folder under that name with files:
+1. a set of row files "rows_i", one per worker; every group of lines refers to one instance
+2. a set of column subfiles "rows_i_cols_j"; and rows_i_col_y
+
+====== column_server.h: add support for appending "data_source" ======
+In MasterRecver, the following structures controls the column assignment:
+vector<vector<int>> mac_map; //mac_map[group_id] = list of machine IDs //used to get machine list of a column
+vector<data_source *> group_src; //group_src[group_id] = data_source of the group //used by load_column_group
+vector<int> group_in_src; //group_in_src[group_id] = group_id in the data_source of the group //used by load_column_group
+vector<int> col_group; //col_group[col_id] = group_id; //used to get machine list of a column
+
+
+
+mpiexec -n 4 ./train yanda2/3/job.config tree.config
+./test yanda2/3/models/model_0 test.csv meta.csv job.config 1
+./predict job/model_0 test.csv meta.csv job.config 1
+
+
+
+ISSUE FOUND:
+
+* for completely random trees, we cannot do subtree task !!! or it will use the same column(s) for all subsequent depths
+>> changes:
+
+(1) MasterRecver::create_node_and_plans(.)
+>> if (task_best_split->left_D < subtree_D) <--- this condition is checked only if resampling is false
+===> } else if (treeConfig.sample_col_each_node == false && task_best_split->left_D < subtree_D) { // left subtree plan
+>> symmetrically, should change the right_D part
+
+(2) MasterRecver::create_node_and_plans(.)
+>> if(task_best_split->right_D < subtree_D && task_best_split->right_D > treeConfig.MIN_SAMPLE_LEAF) {
+        total_parent_request++; //key slave of subtree plan will ask for row indices
+    }
+===> if(treeConfig.sample_col_each_node == false && task_best_split->left_D < subtree_D && task_best_split->left_D > treeConfig.MIN_SAMPLE_LEAF) {
+
+(3) Worker::run(.)
+>> create_root_subtree_plans updated
+
+
+* following sklearn, we set the splitting value as (left_last + right_first) / 2
+>> splitter.h, create_split_result_mid(.), create_split_result_mid_int(.):
+   ordinalSplitResult->attribute_value =
+            boost::lexical_cast<Tx>(pairs[best.offset + 1].x_value);
+===> Tx mid = pairs[best.offset].x_value + pairs[best.offset + 1].x_value;
+     if(mid % 2 == 1) mid++; //round up <----------- this is only done for int, short, char.  Not for float and double !!!
+     ordinalSplitResult->attribute_value = mid/2;
+
+
+* for completely random trees, we should sample a random splitting threshold, rather than using one-pass algorithm to find the best
+>> changes: DT, RF, EF (add type EF)
+>> if type is EF, sample a random splitting threshold
+>> splitter.h: add find_random_split_column(.) and its assisting functions
+>> splitter.h: node_split(.) now branches with find_random_split_column(.) or find_best_split_column(.)
+>> TreeConfig: add type "ET", type should be serialized as TreeConfig is part of a plan msg to slaves
+
+
+* SAVE_TREE_HDFS -> job.config, not enabled for test
+
+
+
+updates:
+- load_column_group (based on meta), data_source (column info) --> done
+- get vec of data_source, do group assignment !!! <test with manual config files> --> done
+- write job config and trees config --> done
+- training a forest with 20 trees (check accuracy) --> done
+- class prob vec, need to fix class number in job.config (y_classes), also print in print_tree --> done
+>> how prob_vec is tranferred?  stop_splitting_categorical/ordinal => task.Candidate_Rows::prob_vec => resp.prob_vec => node.prob_vec
+
+- column sampling: sqrt and 1 column % parse string from config --> done
+>> 0 is sqrt (default of sklearn)
+>> ratio should be within (0, 1]
+>> -x means taking x columns
+
+- save tree to HDFS, ioser_hdfs.h --> done
+>> by default: SAVE_TREE_HDFS is enabled, SAVE_TREE is disabled
+>> run_MGS(.) adds an input argument "hdfs_tree_path"
+
+- postprocessing prob-vec vec for a forest
+>> concatenates the tree prob-vectors:    void concat(vector<vector<double>> &prob_vecs, vector<double> &output_vec)
+>> takes their avg:    void avg(vector<vector<double>> &prob_vecs, vector<double> &output_vec)
+>> these 2 utility functions are put in global.h
+
+====== Operation 3: train RF/ET models for each win ======
+See op3mgsTrain
+args:  [job_config_file (hdfs)]  [tree_config_file (local)]  [win_side]  [col_factor]  [model_dir (hdfs)]
+
+
+====== Operation 4: training-phase mgs feature conversion ======
+See op4mgsFeature
+>> tree_obj.h adds function: predict_forest, which averages the class vectors over all trees
+
+for each win, use tree-models to produce output vectors
+>> we reuse load_column_group
+--- to load row_i partition, machine i loads row_i_cols_j for all j
+>> since there are many columns produced, we set col-factor as 10
+>> we use put to put rows and cols
+--- we put it right under root/win, as it will be used in phase 2 frequently
+
+>> add omp multithreading support for tree traversing of different rows (vector merging later is not the bottleneck)
+
+
+====== Operation 5: CF first training-phase using the first window's MGS features ======
+See op5cf1train
+>> very similar to op3
+>> writes everything to hdfs_job_home/CF0
+
+
+====== Operation 6: CF first training-phase feature conversion (with training error reported) ======
+See op6cf1feature
+>> CF phase do not need to output y (though we now do ??????), since next stage y can be obtained from the MGS source
+>> cfout_column_factor = 1, as the number of output columns are small
+>> CF test reports training error, but since we have multiple workers, we need sync among row partitions.
+
+
+====== Operation 7: CF later training-phase (using a window's MGS features + previous CF output)======
+See op7cfiTrain
+>> cserver.X.pop_back(); //remove y !!! this is needed for all but the last data source
+>> cserver.load_y_group(dsrc2); //load y from the last data_src
+>> based on the above principle, we can extend to more than 2 data srcs
+
+
+====== Operation 8: CF later training-phase feature conversion (with training error reported) ======
+See op8cfiFeature
+>> cserver.X.pop_back(); //remove y !!! this is needed for all but the last data source
+>> cserver.load_y_group(dsrc2); //load y from the last data_src
+>> based on the above principle, we can extend to more than 2 data srcs
+
+
+
+
+
+====== NOTE:
+>> both "train" and "convert" reads column files to cserver, so no need for row partitions 
+>> only op1put puts row-partitions, which are loaded by op2slide for sliding
