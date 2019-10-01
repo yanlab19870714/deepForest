@@ -2523,7 +2523,7 @@ public:
 					N_correct += val;
 				}
 			}
-			cout<<_my_rank<<": training accuracy = "<<N_correct<<" / "<<_n_samples<<" = "<<((double)N_correct/_n_samples)<<endl;
+			cout<<_my_rank<<": accuracy = "<<N_correct<<" / "<<_n_samples<<" = "<<((double)N_correct/_n_samples)<<endl;
 		}
 		else
 		{
@@ -3046,7 +3046,7 @@ public:
 					N_correct += val;
 				}
 			}
-			cout<<_my_rank<<": training accuracy = "<<N_correct<<" / "<<_n_samples<<" = "<<((double)N_correct/_n_samples)<<endl;
+			cout<<_my_rank<<": accuracy = "<<N_correct<<" / "<<_n_samples<<" = "<<((double)N_correct/_n_samples)<<endl;
 		}
 		else
 		{
