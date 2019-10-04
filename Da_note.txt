@@ -165,3 +165,22 @@ See op8cfiFeature
 ====== NOTE:
 >> both "train" and "convert" reads column files to cserver, so no need for row partitions 
 >> only op1put puts row-partitions, which are loaded by op2slide for sliding
+
+
+
+====== new update:
+ET now supports subtree task !!!
+
+ToDo: disable ASSERT !!!
+
+mpiexec -n 4 ./op3mgsTrain/run mnist_demo/mgs/3/job.config tree.config 3 2 mnist_demo/mgs/3/models
+
+
+
+
+debug:
+
+2: id = 267, type = i, n_cols = 0, parent_request = 0, |size| = 0
+2: id = 267, type = i, n_cols = 0, parent_request = 0, |size| = 0
+
+always the 2nd last task ...

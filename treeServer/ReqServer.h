@@ -57,10 +57,10 @@ public:
 
 #ifdef ASSERT
         if(it == kvmap.end()) {
-            cout << "task not found = |" << req.parent_task_id << "| rank = " << _my_rank << " File = "
+            cout << "task "<<req.task_id<<" parent_id not found = " << req.parent_task_id << ", rank = " << _my_rank << " File = "
                  << __FILE__ << ", Line = " << __LINE__ << endl;
         }
-        assert(it != kvmap.end()); //parent should be at this slave
+        assert(it != kvmap.end()); //parent should be at this slave @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         assert(it->second->task_type == TASK_COL_SPLIT); //parent is at this slave
 #endif
 
@@ -129,6 +129,10 @@ public:
             auto it = kvmap.find(req.parent_task_id);
 
 #ifdef ASSERT
+            if(it == kvmap.end()) {
+            	cout << "task "<<req.task_id<<" not found = |" << req.parent_task_id << "| rank = " << _my_rank << " File = "
+					 << __FILE__ << ", Line = " << __LINE__ << endl;
+			}
             assert(it != kvmap.end());
 #endif
 

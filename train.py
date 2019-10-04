@@ -44,9 +44,9 @@ window_list = [3, 5] # window side lengths (comma-separated)
 # job parameters to set for TreeServer MGS (some are reused by cascading phase later)
 max_category_number = 10 # max allowed unique category item in a feature column (for not ignoring it)
 mgs_column_factor = 2 # we group columns of X into "[col_factor] * _num_worker" groups
-subtree_D = 1000 # subtree_D, threshold to decide on subtree task or col_split task
-BFS_PRIORITY_THRESHOLD = 10000
-ACTIVE_TREE_THRESHOLD = 10
+subtree_D = 10000 # subtree_D, threshold to decide on subtree task or col_split task
+BFS_PRIORITY_THRESHOLD = 80000
+ACTIVE_TREE_THRESHOLD = 200
 y_classes = [0,1,2,3,4,5,6,7,8,9]
 
 # mgs tree config parameters
@@ -642,7 +642,7 @@ def prepare_job_config_CF(win, round):
 #////////////////////////////////////////////////////////////
 # actual running
 
-#compile() # !!! comment this line after running the script for the first time
+compile() # !!! comment this line after running the script for the first time
 put() # !!! comment this line after running the script for the first time
 slide()
 prepare_win_job_configs()
