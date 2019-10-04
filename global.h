@@ -45,7 +45,7 @@
 
 #include <mpi.h>
 
-#define ASSERT
+//#define ASSERT
 //#define DEBUG_LOG
 
 using namespace std;
