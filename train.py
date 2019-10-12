@@ -642,7 +642,7 @@ def prepare_job_config_CF(win, round):
 #////////////////////////////////////////////////////////////
 # actual running
 
-compile() # !!! comment this line after running the script for the first time
+#compile() # !!! comment this line after running the script for the first time
 put() # !!! comment this line after running the script for the first time
 slide()
 prepare_win_job_configs()

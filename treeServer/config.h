@@ -85,6 +85,8 @@ public:
 
 ibinstream & operator<<(ibinstream & m, const TreeConfig & treeConfig) {
 	m << treeConfig.type;
+	m << treeConfig.column_sample;
+	m << treeConfig.sample_col_each_node;
     m << treeConfig.IMPURITY_FUNC;
     m << treeConfig.MAX_TREE_DEPTH;
     m << treeConfig.MIN_SAMPLE_LEAF;
@@ -95,6 +97,8 @@ ibinstream & operator<<(ibinstream & m, const TreeConfig & treeConfig) {
 
 obinstream & operator>>(obinstream & m, TreeConfig & treeConfig) {
 	m >> treeConfig.type;
+	m >> treeConfig.column_sample;
+	m >> treeConfig.sample_col_each_node;
     m >> treeConfig.IMPURITY_FUNC;
     m >> treeConfig.MAX_TREE_DEPTH;
     m >> treeConfig.MIN_SAMPLE_LEAF;
