@@ -58,7 +58,7 @@ void set_stop_cond_and_indices(vector<size_t>::iterator start, vector<size_t>::i
         short label;
 
         if(Y->is_ordinal) {
-            stop = stop_splitting_ordinal<short>(cserver.X, start, end, treeConfig, label);
+            stop = stop_splitting_ordinal_int<short>(cserver.X, start, end, treeConfig, label);
         } else {
             stop = stop_splitting_categorical<short>(cserver.X, start, end, treeConfig, label, class_vector);
         }
@@ -69,7 +69,7 @@ void set_stop_cond_and_indices(vector<size_t>::iterator start, vector<size_t>::i
         int label;
 
         if(Y->is_ordinal) {
-            stop = stop_splitting_ordinal<int>(cserver.X, start, end, treeConfig, label);
+            stop = stop_splitting_ordinal_int<int>(cserver.X, start, end, treeConfig, label);
         } else {
             stop = stop_splitting_categorical<int>(cserver.X, start, end, treeConfig, label, class_vector);
         }
@@ -350,7 +350,7 @@ public:
             short label;
 
             if(Y->is_ordinal) {
-                stop = stop_splitting_ordinal<short>(cserver.X, start, end, treeConfig, label);
+                stop = stop_splitting_ordinal_int<short>(cserver.X, start, end, treeConfig, label);
             } else {
                 stop = stop_splitting_categorical<short>(cserver.X, start, end, treeConfig, label, class_vector);
             }
@@ -373,7 +373,7 @@ public:
             int label;
 
             if(Y->is_ordinal) {
-                stop = stop_splitting_ordinal<int>(cserver.X, start, end, treeConfig, label);
+                stop = stop_splitting_ordinal_int<int>(cserver.X, start, end, treeConfig, label);
             } else {
                 stop = stop_splitting_categorical<int>(cserver.X, start, end, treeConfig, label, class_vector);
             }
