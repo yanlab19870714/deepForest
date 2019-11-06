@@ -66,13 +66,13 @@ mgs_extratrees_minleaf = 10
 cf_column_factor = 10 # we group columns of X into "[col_factor] * _num_worker" groups
 # ------
 cf_forests = 2 # number of forests
-cf_forests_ntrees = 1000 # number of trees in a forest
+cf_forests_ntrees = 20 # number of trees in a forest
 cf_forests_maxdepth = 2147483647
 cf_forests_func = 9 # gini
 cf_forests_minleaf = 1
 # ------
 cf_extratrees = 0 # number of extratrees
-cf_extratrees_ntrees = 1000 # number of trees in a forest
+cf_extratrees_ntrees = 20 # number of trees in a forest
 cf_extratrees_maxdepth = 2147483647
 cf_extratrees_func = 9 # gini
 cf_extratrees_minleaf = 1
