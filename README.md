@@ -7,6 +7,10 @@ Following divide and conquer, TreeServer treats each tree node to construct as a
 
 For more details on how to run the system, please refer to "train.py" for training and "test.py" for testing. There, we currently runs 4 MPI processes on the local machine; we have not added the host file for MPI to run with multiple machines, but you can change the script to add that by appending "-f {hostfile}" right after "mpiexec -n 4 ".
 
+### Configure the Running Environment
+Please follow the documentation here to deploy: https://yanlab19870714.github.io/yanda/gthinker/deploy.html
+We additionally require you to install the Boost C++ library. You may need to update the Makefiles to run on your platform.
+
 ### Contact
 Da Yan: http://www.cs.uab.edu/yanda
 
